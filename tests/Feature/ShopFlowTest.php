@@ -168,7 +168,7 @@ test('product seeder names products and attaches photos from the band folders', 
         expect(Product::count())->toBe(16);
         $hoodie = Product::where('collection', 'wknd')->where('category', 'hoodies')->first();
         expect($hoodie->name)->toBe('The Weeknd Pullover Hoodie')
-            ->and($hoodie->image)->toBe('images/products/wknd/wknd_hoodie.png');
+            ->and($hoodie->image)->toStartWith('images/products/wknd/wknd_hoodie.'); // real photo or the test's copy
 
         // Admin uploads are left alone on re-seed.
         $hoodie->update(['image' => 'uploads/custom.png']);

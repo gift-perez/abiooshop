@@ -29,7 +29,7 @@ export default function ProductCards({ products }: Props) {
                         key={product.id}
                         className="group flex flex-col overflow-hidden rounded-lg border bg-white transition-shadow hover:shadow-md"
                     >
-                        <div className="relative aspect-square overflow-hidden bg-neutral-100">
+                        <div className="relative aspect-square overflow-hidden bg-white">
                             <img
                                 src={imageUrl(product.image)}
                                 alt={product.name}

@@ -16,3 +16,5 @@ database/*.sqlite
 .phpunit.cache
 .vscode
 .idea
+tools
+resources/product-photos

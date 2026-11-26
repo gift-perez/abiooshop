@@ -23,5 +23,18 @@ Rules:
 - Use **lowercase** names. The live server runs Linux, where `The1975_Shirt.jpg` won't match.
 - Square images look best (cards crop to a square). Keep each under ~500 KB.
 
+## White backgrounds
+
+`tools/product-photos/whiten.py` cuts each product out and puts it on a white square.
+Originals are kept in `resources/product-photos/originals/` (not deployed). See the top of the script for setup:
+
+```powershell
+py -3.12 -m venv .venv-photos
+.venv-photos\Scripts\python -m pip install "rembg[cpu]" pillow
+.venv-photos\Scripts\python tools/product-photos/whiten.py
+```
+
+It only processes new or replaced photos. To undo one, copy its original back.
+
 After adding photos, run `php artisan db:seed --class=ProductSeeder` to attach them. Deploys do this automatically.
 Products still without a photo show `placeholder.png`. Images an admin uploads through the dashboard are never replaced.

@@ -62,7 +62,7 @@ export default function Show({ product, collectionProducts, categoryProducts }: 
             </nav>
 
             <div className="grid gap-8 md:grid-cols-2 lg:gap-12">
-                <div className="aspect-square overflow-hidden rounded-xl border bg-neutral-100">
+                <div className="aspect-square overflow-hidden rounded-xl border bg-white">
                     <img src={imageUrl(product.image)} alt={product.name} className="h-full w-full object-cover" />
                 </div>
                 <div className="flex flex-col">
