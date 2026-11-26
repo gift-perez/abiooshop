@@ -11,7 +11,7 @@ class ShopController extends Controller
     public function home()
     {
         return Inertia::render('guest', [
-            'products' => Product::latest()->get(),
+            'products' => Product::latest()->take(8)->get(),
         ]);
     }
 

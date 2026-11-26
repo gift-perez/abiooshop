@@ -1,81 +1,95 @@
-import { Navbar } from '@/components/ui/navbar';
 import ProductCards from '@/components/ui/productCards';
+import StoreLayout from '@/layouts/store-layout';
+import { cn } from '@/lib/utils';
 import type { Product } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Props {
     products: Product[];
 }
 
+/** Hero banners. Each links to its collection in the shop. */
+const SLIDES = [
+    { src: '/uploads/t1975.png', alt: 'The 1975 collection', collection: 'the1975' },
+    { src: '/uploads/nbhd.png', alt: 'The Neighbourhood collection', collection: 'nbhd' },
+];
+
 export default function Guest({ products }: Props) {
+    return (
+        <StoreLayout>
+            <Head title="Welcome" />
+            <HeroCarousel />
+
+            <section className="mt-12">
+                <div className="mb-6 flex items-end justify-between">
+                    <h2 className="text-2xl font-bold">New arrivals</h2>
+                    <Link href={route('shop.index')} className="text-sm font-medium text-neutral-500 hover:text-neutral-900">
+                        View all →
+                    </Link>
+                </div>
+                <ProductCards products={products} />
+            </section>
+        </StoreLayout>
+    );
+}
+
+function HeroCarousel() {
+    const [index, setIndex] = useState(0);
+    const go = (step: number) => setIndex((i) => (i + step + SLIDES.length) % SLIDES.length);
+
+    // Auto-advance; restarts whenever the slide changes, so a click resets the timer.
+    useEffect(() => {
+        const id = setTimeout(() => setIndex((i) => (i + 1) % SLIDES.length), 6000);
+        return () => clearTimeout(id);
+    }, [index]);
 
     return (
-        <>
-            <Head title="Welcome">
-                <link rel="preconnect" href="https://fonts.bunny.net" />
-                <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
-            </Head>
-            <Navbar />
-            <div className="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] lg:justify-center lg:p-8 dark:bg-[#0a0a0a]">
-                <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
-                    {/* <nav className="flex items-center justify-end gap-4"> */}
+        <div className="relative aspect-video overflow-hidden rounded-xl bg-neutral-100 sm:aspect-[21/9]">
+            {SLIDES.map((slide, i) => (
+                <Link
+                    key={slide.src}
+                    href={route('shop.index', { collection: slide.collection })}
+                    className={cn('absolute inset-0 transition-opacity duration-700', i === index ? 'opacity-100' : 'pointer-events-none opacity-0')}
+                    aria-hidden={i !== index}
+                    tabIndex={i === index ? 0 : -1}
+                >
+                    <img src={slide.src} alt={slide.alt} className="h-full w-full object-cover" />
+                </Link>
+            ))}
 
-                    {/* </nav> */}
-                </header>
-                <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
-                    <main className="flex w-full max-w-[335px] flex-col-reverse lg:max-w-4xl lg:flex-row">
-                        <div className="carousel h-100 w-full">
-                            <div id="slide1" className="relative carousel-item h-full w-full">
-                                <img src="/uploads/t1975.png" alt="" className="h-full w-full" />
-                                <div className="absolute top-1/2 right-5 left-5 flex -translate-y-1/2 transform justify-between">
-                                    <a href="#slide4" className="btn btn-circle">
-                                        ❮
-                                    </a>
-                                    <a href="#slide2" className="btn btn-circle">
-                                        ❯
-                                    </a>
-                                </div>
-                            </div>
-                            <div id="slide2" className="relative carousel-item w-full">
-                                <img src="/uploads/nbhd.png" alt="" className="h-full w-full" />
-                                <div className="absolute top-1/2 right-5 left-5 flex -translate-y-1/2 transform justify-between">
-                                    <a href="#slide1" className="btn btn-circle">
-                                        ❮
-                                    </a>
-                                    <a href="#slide3" className="btn btn-circle">
-                                        ❯
-                                    </a>
-                                </div>
-                            </div>
-                            <div id="slide3" className="relative carousel-item w-full">
-                                <img src="https://img.daisyui.com/images/stock/photo-1414694762283-acccc27bca85.webp" alt="" className="w-full" />
-                                <div className="absolute top-1/2 right-5 left-5 flex -translate-y-1/2 transform justify-between">
-                                    <a href="#slide2" className="btn btn-circle">
-                                        ❮
-                                    </a>
-                                    <a href="#slide4" className="btn btn-circle">
-                                        ❯
-                                    </a>
-                                </div>
-                            </div>
-                            <div id="slide4" className="relative carousel-item w-full">
-                                <img src="https://img.daisyui.com/images/stock/photo-1665553365602-b2fb8e5d1707.webp" alt="" className="w-full" />
-                                <div className="absolute top-1/2 right-5 left-5 flex -translate-y-1/2 transform justify-between">
-                                    <a href="#slide3" className="btn btn-circle">
-                                        ❮
-                                    </a>
-                                    <a href="#slide1" className="btn btn-circle">
-                                        ❯
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </main>
-                </div>
+            <CarouselButton side="left" onClick={() => go(-1)} />
+            <CarouselButton side="right" onClick={() => go(1)} />
 
-                <ProductCards products={products} />
-                <div className="hidden h-14.5 lg:block"></div>
+            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
+                {SLIDES.map((slide, i) => (
+                    <button
+                        key={slide.src}
+                        type="button"
+                        onClick={() => setIndex(i)}
+                        aria-label={`Show slide ${i + 1}`}
+                        className={cn('h-2 rounded-full transition-all', i === index ? 'w-6 bg-white' : 'w-2 bg-white/60')}
+                    />
+                ))}
             </div>
-        </>
+        </div>
+    );
+}
+
+function CarouselButton({ side, onClick }: { side: 'left' | 'right'; onClick: () => void }) {
+    const Icon = side === 'left' ? ChevronLeft : ChevronRight;
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-label={side === 'left' ? 'Previous slide' : 'Next slide'}
+            className={cn(
+                'absolute top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-neutral-900 shadow transition hover:bg-white',
+                side === 'left' ? 'left-3' : 'right-3',
+            )}
+        >
+            <Icon className="h-5 w-5" />
+        </button>
     );
 }

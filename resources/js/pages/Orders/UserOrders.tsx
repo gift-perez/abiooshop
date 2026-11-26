@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Navbar } from '@/components/ui/navbar';
+import StoreLayout from '@/layouts/store-layout';
 import { ORDER_STATUS } from '@/lib/catalog';
 import { imageUrl, peso } from '@/lib/utils';
 import type { Order } from '@/types';
@@ -24,9 +24,9 @@ export default function UserOrders({ orders }: Props) {
     };
 
     return (
-        <>
+        <StoreLayout>
             <Head title="My Orders" />
-            <Navbar />
+            <h1 className="mx-auto mb-6 max-w-3xl text-3xl font-bold">My orders</h1>
 
             {orders.length === 0 ? (
                 <div className="flex h-64 flex-col items-center justify-center">
@@ -37,7 +37,7 @@ export default function UserOrders({ orders }: Props) {
                     </Link>
                 </div>
             ) : (
-                <div className="mx-auto my-4 flex max-w-3xl flex-col gap-4 px-4">
+                <div className="mx-auto flex max-w-3xl flex-col gap-4">
                     {orders.map((order) => {
                         const status = ORDER_STATUS[order.order_status] ?? { label: order.order_status, className: 'text-gray-700' };
 
@@ -86,6 +86,6 @@ export default function UserOrders({ orders }: Props) {
                     })}
                 </div>
             )}
-        </>
+        </StoreLayout>
     );
 }

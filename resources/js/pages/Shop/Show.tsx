@@ -9,11 +9,12 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Navbar } from '@/components/ui/navbar';
 import ProductCards from '@/components/ui/productCards';
+import StoreLayout from '@/layouts/store-layout';
+import { CATEGORIES, COLLECTIONS } from '@/lib/catalog';
 import { imageUrl, peso } from '@/lib/utils';
 import type { Product } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { ChevronDown, MessageSquareWarning } from 'lucide-react';
 import { useState } from 'react';
 
@@ -45,21 +46,36 @@ export default function Show({ product, collectionProducts, categoryProducts }: 
     };
 
     return (
-        <>
+        <StoreLayout>
             <Head title={product.name} />
-            <Navbar />
 
-            <div className="hero bg-base-200 max-h-screen overflow-hidden">
-                <div className="hero-content m-10 flex flex-col gap-10 lg:flex-row">
-                    <div className="w-full lg:w-1/2">
-                        <img src={imageUrl(product.image)} alt={product.name} className="h-90 w-90 rounded-lg object-cover shadow" />
-                    </div>
-                    <div className="w-full lg:w-1/2">
-                        <h1 className="mb-2 text-4xl font-bold">{product.name.toUpperCase()}</h1>
-                        <p className="mb-4 text-gray-500">{product.description}</p>
-                        <p className="mb-2 text-xl font-bold text-green-600">{peso(product.price)}</p>
-                        <p className="mb-4 text-sm text-gray-600">{outOfStock ? 'Out of stock' : `Stock: ${product.stock}`}</p>
+            <nav className="mb-6 text-sm text-neutral-500">
+                <Link href={route('shop.index')} className="hover:text-neutral-900">
+                    Shop
+                </Link>
+                {' / '}
+                <Link href={route('shop.index', { collection: product.collection })} className="hover:text-neutral-900">
+                    {COLLECTIONS[product.collection] ?? product.collection}
+                </Link>
+                {' / '}
+                <span className="text-neutral-900">{product.name}</span>
+            </nav>
 
+            <div className="grid gap-8 md:grid-cols-2 lg:gap-12">
+                <div className="aspect-square overflow-hidden rounded-xl border bg-neutral-100">
+                    <img src={imageUrl(product.image)} alt={product.name} className="h-full w-full object-cover" />
+                </div>
+                <div className="flex flex-col">
+                    <p className="text-sm tracking-wide text-neutral-500 uppercase">
+                        {COLLECTIONS[product.collection] ?? product.collection} · {CATEGORIES[product.category] ?? product.category}
+                    </p>
+                    <h1 className="mt-1 text-3xl font-bold lg:text-4xl">{product.name}</h1>
+                    <p className="mt-4 text-2xl font-bold">{peso(product.price)}</p>
+                    <p className={`mt-1 text-sm ${outOfStock ? 'text-red-600' : 'text-neutral-500'}`}>
+                        {outOfStock ? 'Sold out' : product.stock <= 5 ? `Only ${product.stock} left` : 'In stock'}
+                    </p>
+                    <p className="mt-6 leading-relaxed text-neutral-600">{product.description}</p>
+                    <div className="mt-8">
                         {!outOfStock && (
                             <div className="mb-2 flex items-center gap-2">
                                 <span className="text-sm text-gray-600">Quantity:</span>
@@ -103,7 +119,7 @@ export default function Show({ product, collectionProducts, categoryProducts }: 
                             </Alert>
                         )}
 
-                        <div className="mt-4 flex gap-2">
+                        <div className="mt-6 flex gap-2">
                             <Button variant="outline" onClick={() => submit(route('cart.add'))} disabled={loading || disabled} className="w-full">
                                 Add to Cart
                             </Button>
@@ -115,20 +131,18 @@ export default function Show({ product, collectionProducts, categoryProducts }: 
                 </div>
             </div>
 
-            <div className="mt-4 flex flex-col gap-4">
-                {collectionProducts.length > 0 && (
-                    <div className="m-4 gap-4">
-                        <h2 className="mx-6 text-xl font-bold text-gray-800">More from this collection</h2>
-                        <ProductCards products={collectionProducts} />
-                    </div>
-                )}
-                {categoryProducts.length > 0 && (
-                    <div className="m-4 gap-4">
-                        <h2 className="mx-6 text-xl font-bold text-gray-800">More in this category</h2>
-                        <ProductCards products={categoryProducts} />
-                    </div>
-                )}
-            </div>
-        </>
+            {collectionProducts.length > 0 && (
+                <section className="mt-16">
+                    <h2 className="mb-6 text-xl font-bold">More from {COLLECTIONS[product.collection] ?? 'this collection'}</h2>
+                    <ProductCards products={collectionProducts} />
+                </section>
+            )}
+            {categoryProducts.length > 0 && (
+                <section className="mt-16">
+                    <h2 className="mb-6 text-xl font-bold">More {CATEGORIES[product.category]?.toLowerCase() ?? 'in this category'}</h2>
+                    <ProductCards products={categoryProducts} />
+                </section>
+            )}
+        </StoreLayout>
     );
 }

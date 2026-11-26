@@ -49,13 +49,13 @@ export default function CartItems({ cartItems }: Props) {
 
     return (
         <div>
-            <div className="flex items-center justify-between text-3xl font-bold text-gray-800">
-                Cart
-                <Button onClick={handleClear} className="m-4" variant="ghost">
+            <div className="mb-6 flex items-center justify-between">
+                <h1 className="text-3xl font-bold">Your cart</h1>
+                <Button onClick={handleClear} variant="ghost">
                     Clear cart
                 </Button>
             </div>
-            <div className="m-4">
+            <div className="overflow-x-auto rounded-lg border">
                 <Table>
                     <TableHeader>
                         <TableRow>

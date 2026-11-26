@@ -154,3 +154,30 @@ test('nobody can register as an admin', function () {
 
     expect(User::where('email', 'sneaky@example.com')->first()->isAdmin())->toBeFalse();
 });
+
+test('product seeder names products and attaches photos from the band folders', function () {
+    $photo = public_path('images/products/wknd/wknd_hoodie.png');
+    $existed = is_file($photo);
+    if (! $existed) {
+        copy(public_path(\Database\Seeders\ProductSeeder::PLACEHOLDER), $photo);
+    }
+
+    try {
+        $this->seed(\Database\Seeders\ProductSeeder::class);
+
+        expect(Product::count())->toBe(16);
+        $hoodie = Product::where('collection', 'wknd')->where('category', 'hoodies')->first();
+        expect($hoodie->name)->toBe('The Weeknd Pullover Hoodie')
+            ->and($hoodie->image)->toBe('images/products/wknd/wknd_hoodie.png');
+
+        // Admin uploads are left alone on re-seed.
+        $hoodie->update(['image' => 'uploads/custom.png']);
+        $this->seed(\Database\Seeders\ProductSeeder::class);
+        expect($hoodie->fresh()->image)->toBe('uploads/custom.png')
+            ->and(Product::count())->toBe(16);
+    } finally {
+        if (! $existed) {
+            @unlink($photo);
+        }
+    }
+});

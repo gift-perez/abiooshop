@@ -10,13 +10,18 @@ export function Navbar() {
     const { numItems, auth } = usePage<SharedData>().props;
 
     return (
-        <nav className="border-b bg-white shadow-sm">
-            <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-                <Link href={route('shop.index')} className="text-lg font-bold hover:text-blue-500">
-                    ABIIO SHOP
-                </Link>
+        <nav className="sticky top-0 z-40 border-b bg-white/90 text-neutral-900 backdrop-blur">
+            <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+                <div className="flex items-center gap-6">
+                    <Link href={route('home')} className="text-lg font-bold tracking-tight">
+                        ABIIO SHOP
+                    </Link>
+                    <Link href={route('shop.index')} className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 sm:block">
+                        Shop
+                    </Link>
+                </div>
 
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center gap-4">
                     {auth.user?.role === 'admin' && (
                         <Link href={route('products.index')} title="Admin" aria-label="Admin dashboard">
                             <LayoutDashboard />
@@ -26,7 +31,7 @@ export function Navbar() {
                     <Link href={route('cart')} className="relative" aria-label="Cart">
                         <ShoppingBag />
                         {numItems > 0 && (
-                            <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-xs text-white">
+                            <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-900 text-xs text-white">
                                 {numItems > 9 ? '9+' : numItems}
                             </span>
                         )}
@@ -52,12 +57,12 @@ export function Navbar() {
                         </DropdownMenu>
                     ) : (
                         <>
-                            <Link href={route('login')} className="px-4 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900">
+                            <Link href={route('login')} className="text-sm font-medium text-neutral-600 hover:text-neutral-900">
                                 Log in
                             </Link>
                             <Link
                                 href={route('register')}
-                                className="rounded border border-gray-300 px-4 py-1.5 text-sm font-medium hover:bg-gray-100"
+                                className="rounded-md bg-neutral-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-neutral-700"
                             >
                                 Register
                             </Link>
