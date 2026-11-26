@@ -14,8 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CATEGORIES, COLLECTIONS } from '@/lib/catalog';
 import { imageUrl } from '@/lib/utils';
-import { ChevronDown } from 'lucide-react';
-import { FormEvent } from 'react';
+import { ChevronDown, ImageUp, X } from 'lucide-react';
+import { FormEvent, useEffect, useMemo, useRef } from 'react';
 
 // A `type` (not `interface`) so it satisfies Inertia's useForm constraint.
 export type ProductFormData = {
@@ -96,20 +96,7 @@ export default function ProductForm({ data, setData, errors, processing, onSubmi
             />
             <Choice label="Category" options={CATEGORIES} value={data.category} onChange={(v) => setData('category', v)} error={errors.category} />
 
-            <div className="grid gap-1.5">
-                <Label htmlFor="image">Image</Label>
-                {currentImage && !data.image && (
-                    <img src={imageUrl(currentImage)} alt="Current product image" className="h-24 w-24 rounded object-cover" />
-                )}
-                <input
-                    id="image"
-                    type="file"
-                    accept="image/png,image/jpeg,image/gif,image/webp"
-                    onChange={(e) => setData('image', e.target.files?.[0] ?? null)}
-                />
-                <p className="text-xs text-gray-500">PNG, JPG, GIF or WebP, up to 2 MB.{currentImage ? ' Leave empty to keep the current image.' : ''}</p>
-                <InputError message={errors.image} />
-            </div>
+            <ImagePicker file={data.image} currentImage={currentImage} onChange={(file) => setData('image', file)} error={errors.image} />
 
             <Button type="submit" disabled={processing}>
                 {processing ? 'Saving...' : submitLabel}
@@ -152,6 +139,72 @@ function Choice({
                     </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
+            <InputError message={error} />
+        </div>
+    );
+}
+
+function ImagePicker({
+    file,
+    currentImage,
+    onChange,
+    error,
+}: {
+    file: File | null;
+    currentImage?: string;
+    onChange: (file: File | null) => void;
+    error?: string;
+}) {
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Preview the newly chosen file; release the object URL when it changes.
+    const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+    useEffect(() => () => void (preview && URL.revokeObjectURL(preview)), [preview]);
+
+    const shown = preview ?? (currentImage ? imageUrl(currentImage) : null);
+
+    const clear = () => {
+        onChange(null);
+        if (inputRef.current) inputRef.current.value = '';
+    };
+
+    return (
+        <div className="grid gap-1.5">
+            <Label htmlFor="image">Image</Label>
+            <div className="flex items-center gap-4">
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-white">
+                    {shown ? (
+                        <img src={shown} alt="Product image preview" className="h-full w-full object-cover" />
+                    ) : (
+                        <ImageUp className="h-6 w-6 text-neutral-400" />
+                    )}
+                </div>
+                <div className="flex min-w-0 flex-col items-start gap-2">
+                    <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
+                        <ImageUp />
+                        {currentImage || file ? 'Replace image' : 'Choose image'}
+                    </Button>
+                    {file ? (
+                        <div className="flex max-w-full items-center gap-1 text-sm text-neutral-600">
+                            <span className="truncate">{file.name}</span>
+                            <button type="button" onClick={clear} className="rounded p-0.5 hover:bg-neutral-100" aria-label="Remove chosen image">
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                    ) : (
+                        <span className="text-sm text-neutral-500">{currentImage ? 'Using the current image' : 'No image chosen'}</span>
+                    )}
+                </div>
+            </div>
+            <input
+                ref={inputRef}
+                id="image"
+                type="file"
+                className="sr-only"
+                accept="image/png,image/jpeg,image/gif,image/webp"
+                onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+            />
+            <p className="text-xs text-neutral-500">PNG, JPG, GIF or WebP, up to 2 MB.</p>
             <InputError message={error} />
         </div>
     );
