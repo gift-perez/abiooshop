@@ -11,7 +11,7 @@ test('guests are redirected to the login page', function () {
 test('customers are sent to the shop', function () {
     $this->actingAs(User::factory()->create());
 
-    $this->get('/dashboard')->assertRedirect(route('shop.index'));
+    $this->get('/dashboard')->assertRedirect(route('home'));
 });
 
 test('admins are sent to the product admin', function () {

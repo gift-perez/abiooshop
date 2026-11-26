@@ -35,7 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::get('dashboard', function () {
         return auth()->user()->isAdmin()
             ? redirect()->route('products.index')
-            : redirect()->route('shop.index');
+            : redirect()->route('home');
     })->name('dashboard');
 
     Route::post('/buy-now', [CartDBController::class, 'buyNow'])->name('buy.now');

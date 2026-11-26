@@ -43,7 +43,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->intended(route('products.index', absolute: false));
         }
 
-        return redirect()->intended(route('shop.index', absolute: false));
+        return redirect()->intended(route('home', absolute: false));
     }
 
     /**

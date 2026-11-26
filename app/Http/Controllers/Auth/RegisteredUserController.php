@@ -50,6 +50,6 @@ class RegisteredUserController extends Controller
         // A new account has no saved cart yet, so it starts with what the visitor picked.
         $carts->mergeSessionIntoUser($user);
 
-        return redirect()->intended(route('shop.index', absolute: false));
+        return redirect()->intended(route('home', absolute: false));
     }
 }
