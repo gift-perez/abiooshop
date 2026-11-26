@@ -29,7 +29,7 @@ function Footer() {
             <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-3 sm:px-6">
                 <div>
                     <p className="text-lg font-bold">ABIIO SHOP</p>
-                    <p className="mt-2 font-display text-xl italic">Merch for people who listen to the whole album.</p>
+                    <p className="mt-2 font-display text-xl italic">Merch for the songs that stuck with you.</p>
                     <p className="mt-3 text-sm text-neutral-500">A portfolio demo store; payments are simulated.</p>
                 </div>
                 <FooterLinks title="Collections" items={COLLECTIONS} param="collection" />
