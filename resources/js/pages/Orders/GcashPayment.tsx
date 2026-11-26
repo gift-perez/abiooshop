@@ -77,7 +77,7 @@ export default function GcashPayment({ order }: Props) {
                         <svg className="mb-4 h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        <p className="mb-2 font-bold text-green-600">Payment Successful!</p>
+                        <p className="mb-2 font-bold text-green-600">Payment received. Love it if we made it.</p>
                         <Link
                             href={route('orders.showOrders')}
                             className="mb-2 w-full rounded bg-[#0057e2] px-4 py-2 text-white hover:bg-[#0046b0]"

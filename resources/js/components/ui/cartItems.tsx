@@ -39,7 +39,8 @@ export default function CartItems({ cartItems }: Props) {
         return (
             <div className="flex h-64 flex-col items-center justify-center">
                 <ShoppingBag className="mb-4 h-12 w-12 text-gray-400" />
-                <p className="mb-4 text-gray-500">Your bag is empty</p>
+                <p className="font-display text-2xl">A brief inquiry into an empty bag</p>
+                <p className="mt-1 mb-4 text-sm text-gray-500">Nothing in here yet. The 1975 collection is a good place to start.</p>
                 <Link href={route('shop.index')}>
                     <Button variant="outline">Continue shopping</Button>
                 </Link>
@@ -50,7 +51,7 @@ export default function CartItems({ cartItems }: Props) {
     return (
         <div>
             <div className="mb-6 flex items-center justify-between">
-                <h1 className="text-3xl font-bold">Your cart</h1>
+                <h1 className="font-display text-4xl">Your bag</h1>
                 <Button onClick={handleClear} variant="ghost">
                     Clear cart
                 </Button>

@@ -1,6 +1,6 @@
 import ProductCards from '@/components/ui/productCards';
 import StoreLayout from '@/layouts/store-layout';
-import { CATEGORIES, COLLECTIONS } from '@/lib/catalog';
+import { CATEGORIES, COLLECTION_TAGLINES, COLLECTIONS } from '@/lib/catalog';
 import { cn } from '@/lib/utils';
 import type { Product } from '@/types';
 import { Head, Link } from '@inertiajs/react';
@@ -17,7 +17,10 @@ export default function Index({ products, filters }: Props) {
     return (
         <StoreLayout>
             <Head title="Shop" />
-            <h1 className="text-3xl font-bold">{title}</h1>
+            <h1 className="font-display text-5xl">{title}</h1>
+            {filters.collection && COLLECTION_TAGLINES[filters.collection] && (
+                <p className="mt-2 font-display text-xl text-neutral-600 italic">{COLLECTION_TAGLINES[filters.collection]}</p>
+            )}
             <p className="mt-1 text-sm text-neutral-500">
                 {products.length} {products.length === 1 ? 'item' : 'items'}
             </p>

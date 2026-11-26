@@ -69,7 +69,7 @@ export default function Show({ product, collectionProducts, categoryProducts }: 
                     <p className="text-sm tracking-wide text-neutral-500 uppercase">
                         {COLLECTIONS[product.collection] ?? product.collection} · {CATEGORIES[product.category] ?? product.category}
                     </p>
-                    <h1 className="mt-1 text-3xl font-bold lg:text-4xl">{product.name}</h1>
+                    <h1 className="mt-1 font-display text-4xl lg:text-5xl">{product.name}</h1>
                     <p className="mt-4 text-2xl font-bold">{peso(product.price)}</p>
                     <p className={`mt-1 text-sm ${outOfStock ? 'text-red-600' : 'text-neutral-500'}`}>
                         {outOfStock ? 'Sold out' : product.stock <= 5 ? `Only ${product.stock} left` : 'In stock'}
@@ -133,13 +133,13 @@ export default function Show({ product, collectionProducts, categoryProducts }: 
 
             {collectionProducts.length > 0 && (
                 <section className="mt-16">
-                    <h2 className="mb-6 text-xl font-bold">More from {COLLECTIONS[product.collection] ?? 'this collection'}</h2>
+                    <h2 className="mb-6 font-display text-3xl">More from {COLLECTIONS[product.collection] ?? 'this collection'}</h2>
                     <ProductCards products={collectionProducts} />
                 </section>
             )}
             {categoryProducts.length > 0 && (
                 <section className="mt-16">
-                    <h2 className="mb-6 text-xl font-bold">More {CATEGORIES[product.category]?.toLowerCase() ?? 'in this category'}</h2>
+                    <h2 className="mb-6 font-display text-3xl">More {CATEGORIES[product.category]?.toLowerCase() ?? 'in this category'}</h2>
                     <ProductCards products={categoryProducts} />
                 </section>
             )}

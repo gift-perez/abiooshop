@@ -13,7 +13,8 @@ export default function ProductCards({ products }: Props) {
         return (
             <div className="flex h-64 flex-col items-center justify-center">
                 <PackageSearch className="mb-4 h-12 w-12 text-neutral-400" />
-                <p className="text-neutral-500">No products found.</p>
+                <p className="font-display text-2xl">Nothing here (yet)</p>
+                <p className="mt-1 text-sm text-neutral-500">Try another collection or category.</p>
             </div>
         );
     }

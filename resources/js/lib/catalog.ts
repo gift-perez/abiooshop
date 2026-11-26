@@ -8,6 +8,17 @@ export const COLLECTIONS: Record<string, string> = {
     focean: 'Frank Ocean',
 };
 
+/** The headline band: leads the home page, shop ordering and copy. */
+export const FEATURED_COLLECTION = 'the1975';
+
+/** One-line descriptions for collection tiles. */
+export const COLLECTION_TAGLINES: Record<string, string> = {
+    the1975: 'Monochrome tees, tour-ready hoodies and records on wax.',
+    nbhd: 'Black-and-white everything, for the sweater-weather crowd.',
+    wknd: 'After-hours staples in red and black.',
+    focean: 'Understated pieces for the long drive home.',
+};
+
 export const CATEGORIES: Record<string, string> = {
     shirts: 'Shirts',
     hoodies: 'Hoodies',

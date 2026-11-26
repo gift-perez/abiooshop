@@ -35,7 +35,7 @@ export default function UserOrders({ orders }: Props) {
                 {orders.length === 0 ? (
                     <div className="flex h-64 max-w-3xl flex-col items-center justify-center">
                         <PackageSearch className="mb-4 h-12 w-12 text-gray-400" />
-                        <p className="mb-4 text-gray-500">You don't have any orders yet.</p>
+                        <p className="mb-4 text-gray-500">No orders yet. Your first one is waiting in the shop.</p>
                         <Link href={route('shop.index')}>
                             <Button variant="outline">Start shopping</Button>
                         </Link>

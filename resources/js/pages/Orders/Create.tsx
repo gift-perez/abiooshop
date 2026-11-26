@@ -13,7 +13,7 @@ export default function Create({ cart, cartItems }: Props) {
     return (
         <StoreLayout>
             <Head title="Checkout" />
-            <h1 className="mb-6 text-3xl font-bold">Checkout</h1>
+            <h1 className="mb-6 font-display text-4xl">Checkout</h1>
             <div className="flex w-full flex-col gap-8 lg:flex-row">
                 <div className="flex flex-[2] items-start justify-center">
                     <div className="flex w-full max-w-2xl flex-col">
