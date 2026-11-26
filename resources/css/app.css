@@ -1,5 +1,8 @@
 @import 'tailwindcss';
-@plugin "daisyui";
+/* Storefront is light-only for now; daisyUI would otherwise follow the OS dark mode. */
+@plugin "daisyui" {
+    themes: light --default;
+}
 @plugin 'tailwindcss-animate';
 
 @source '../views';
