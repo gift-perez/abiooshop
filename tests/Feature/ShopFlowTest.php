@@ -234,3 +234,26 @@ test('demo order seeder adds fake sample orders once, without touching stock', f
         ->and((int) Product::sum('stock'))->toBe((int) $stockBefore)
         ->and(User::where('email', 'demo@example.com')->first()->isAdmin())->toBeFalse();
 });
+
+test('the store must give a reason to cancel, and the customer sees it', function () {
+    $admin = makeAdmin();
+    $user = User::factory()->create();
+    $product = makeProduct(['stock' => 5]);
+    $order = placeOrder($user, $product, 2);
+    $order->update(['order_status' => 'paid']);
+
+    // No reason, or a made-up one: rejected, order untouched.
+    $this->actingAs($admin)->put("/admin/orders/{$order->id}/admin-cancel")->assertSessionHasErrors('reason');
+    $this->actingAs($admin)->put("/admin/orders/{$order->id}/admin-cancel", ['reason' => 'felt like it'])->assertSessionHasErrors('reason');
+    expect($order->fresh()->order_status)->toBe('paid');
+
+    $this->actingAs($admin)->put("/admin/orders/{$order->id}/admin-cancel", ['reason' => 'out_of_stock'])->assertSessionHasNoErrors();
+
+    $order->refresh();
+    expect($order->order_status)->toBe('cancelled_admin')
+        ->and($order->cancellation_reason)->toBe('out_of_stock')
+        ->and($product->fresh()->stock)->toBe(5);
+
+    $this->actingAs($user)->get('/my-orders')->assertInertia(fn ($page) => $page
+        ->where('orders.0.cancellation_reason_label', 'An item ran out of stock'));
+});

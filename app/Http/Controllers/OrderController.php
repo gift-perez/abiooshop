@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -184,6 +185,7 @@ class OrderController extends Controller
     {
         return Inertia::render('Admin/Orders/Index', [
             'orders' => Order::latest()->get(),
+            'cancelReasons' => Order::CANCEL_REASONS,
         ]);
     }
 
@@ -198,18 +200,28 @@ class OrderController extends Controller
         return back()->with('success', 'Order marked as delivered.');
     }
 
-    public function adminCancel(Order $order)
+    public function adminCancel(Request $request, Order $order)
     {
+        $data = $request->validate([
+            'reason' => ['required', Rule::in(array_keys(Order::CANCEL_REASONS))],
+        ], [
+            'reason.required' => 'Choose a reason for cancelling this order.',
+        ]);
+
         if (! in_array($order->order_status, ['pending', 'paid'], true)) {
             return back()->with('error', 'This order can no longer be cancelled.');
         }
 
-        DB::transaction(function () use ($order) {
+        $wasPaid = $order->order_status === 'paid';
+
+        DB::transaction(function () use ($order, $data) {
             $order->restoreStock();
-            $order->update(['order_status' => 'cancelled_admin']);
+            $order->update(['order_status' => 'cancelled_admin', 'cancellation_reason' => $data['reason']]);
         });
 
-        return back()->with('success', 'Order cancelled and stock restored.');
+        return back()->with('success', $wasPaid
+            ? 'Order cancelled, stock restored and the payment marked as refunded (demo).'
+            : 'Order cancelled and stock restored.');
     }
 
     /* ----------------------------------------------------------------- */

@@ -1,28 +1,29 @@
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { ORDER_STATUS } from '@/lib/catalog';
 import { peso } from '@/lib/utils';
 import type { BreadcrumbItem, Order } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { PackageSearch } from 'lucide-react';
+import { FormEvent, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Orders', href: '/admin/orders' }];
 
 interface Props {
     orders: Order[];
+    cancelReasons: Record<string, string>;
 }
 
-export default function Index({ orders }: Props) {
+export default function Index({ orders, cancelReasons }: Props) {
+    const [cancelling, setCancelling] = useState<Order | null>(null);
+
     const deliver = (id: string) => {
         if (confirm(`Mark order ${id} as delivered?`)) {
             router.put(route('orders.deliver', id), {}, { preserveScroll: true });
-        }
-    };
-
-    const cancel = (id: string) => {
-        if (confirm(`Cancel order ${id}? Its items will go back in stock.`)) {
-            router.put(route('orders.adminCancel', id), {}, { preserveScroll: true });
         }
     };
 
@@ -71,7 +72,14 @@ export default function Index({ orders }: Props) {
                                             <div className="text-gray-500">{order.phone}</div>
                                             <div className="max-w-xs whitespace-normal text-gray-500">{order.address}</div>
                                         </TableCell>
-                                        <TableCell className={`font-semibold ${status.className}`}>{status.label}</TableCell>
+                                        <TableCell>
+                                            <div className={`font-semibold ${status.className}`}>{status.label}</div>
+                                            {order.cancellation_reason_label && (
+                                                <div className="max-w-48 text-xs whitespace-normal text-gray-500">
+                                                    {order.cancellation_reason_label}
+                                                </div>
+                                            )}
+                                        </TableCell>
                                         <TableCell className="text-right">{peso(order.subtotal)}</TableCell>
                                         <TableCell className="text-right">{peso(order.shipping_cost)}</TableCell>
                                         <TableCell className="text-right">{peso(order.total_cost)}</TableCell>
@@ -82,7 +90,7 @@ export default function Index({ orders }: Props) {
                                                 </Button>
                                             )}
                                             {(order.order_status === 'pending' || order.order_status === 'paid') && (
-                                                <Button variant="ghost" onClick={() => cancel(order.id)} className="m-1 text-red-600">
+                                                <Button variant="ghost" onClick={() => setCancelling(order)} className="m-1 text-red-600">
                                                     Cancel
                                                 </Button>
                                             )}
@@ -94,6 +102,67 @@ export default function Index({ orders }: Props) {
                     </Table>
                 </div>
             )}
+
+            <CancelOrderDialog order={cancelling} reasons={cancelReasons} onClose={() => setCancelling(null)} />
         </AppLayout>
+    );
+}
+
+/** Store-side cancellation always needs a reason; the customer sees it in Order tracking. */
+function CancelOrderDialog({ order, reasons, onClose }: { order: Order | null; reasons: Record<string, string>; onClose: () => void }) {
+    const { data, setData, put, processing, errors, reset, clearErrors } = useForm({ reason: '' });
+
+    const close = () => {
+        reset();
+        clearErrors();
+        onClose();
+    };
+
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        if (!order) return;
+        put(route('orders.adminCancel', order.id), { preserveScroll: true, onSuccess: close });
+    };
+
+    return (
+        <Dialog open={order !== null} onOpenChange={(open) => !open && close()}>
+            <DialogContent>
+                <form onSubmit={submit} className="space-y-4">
+                    <DialogHeader>
+                        <DialogTitle>Cancel order {order?.id}?</DialogTitle>
+                        <DialogDescription>
+                            Its items go back in stock.
+                            {order?.order_status === 'paid' && ' The order is paid, so the payment will be marked as refunded (demo).'} The customer
+                            will see the reason you choose.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-1.5">
+                        <Select value={data.reason} onValueChange={(value) => setData('reason', value)}>
+                            <SelectTrigger aria-label="Cancellation reason">
+                                <SelectValue placeholder="Choose a reason" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(reasons).map(([key, label]) => (
+                                    <SelectItem key={key} value={key}>
+                                        {label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <InputError message={errors.reason} />
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" onClick={close}>
+                            Keep order
+                        </Button>
+                        <Button type="submit" variant="destructive" disabled={processing || !data.reason}>
+                            {processing ? 'Cancelling...' : 'Cancel order'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

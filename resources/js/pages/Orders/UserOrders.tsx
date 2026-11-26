@@ -67,6 +67,12 @@ export default function UserOrders({ orders }: Props) {
                                             <dd className="font-mono">{order.id}</dd>
                                             <dt className="text-gray-500">Status</dt>
                                             <dd className={`font-semibold ${status.className}`}>{status.label}</dd>
+                                            {order.cancellation_reason_label && (
+                                                <>
+                                                    <dt className="text-gray-500">Reason</dt>
+                                                    <dd className="max-w-56 text-gray-700">{order.cancellation_reason_label}</dd>
+                                                </>
+                                            )}
                                             <dt className="text-gray-500">Total</dt>
                                             <dd className="font-semibold text-neutral-900">{peso(order.total_cost)}</dd>
                                         </dl>

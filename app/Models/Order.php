@@ -13,8 +13,24 @@ class Order extends Model
 
     protected $keyType = 'string';
 
+    /**
+     * Why the store cancelled an order (shown to the customer).
+     * Keys are stored in orders.cancellation_reason.
+     */
+    public const CANCEL_REASONS = [
+        'out_of_stock' => 'An item ran out of stock',
+        'payment_unverified' => 'Payment could not be verified',
+        'undeliverable' => "We can't deliver to this address",
+        'customer_request' => 'Cancelled at your request',
+        'suspected_fraud' => 'Order flagged by our fraud checks',
+    ];
+
+    /** Sent with the order to the frontend as `cancellation_reason_label`. */
+    protected $appends = ['cancellation_reason_label'];
+
     protected $fillable = [
         'order_status',
+        'cancellation_reason',
         'subtotal',
         'shipping_cost',
         'total_cost',
@@ -35,6 +51,11 @@ class Order extends Model
             'cart' => 'array',
             'payment_initiated' => 'boolean',
         ];
+    }
+
+    public function getCancellationReasonLabelAttribute(): ?string
+    {
+        return self::CANCEL_REASONS[$this->cancellation_reason] ?? null;
     }
 
     protected static function booted(): void

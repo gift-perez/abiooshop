@@ -92,15 +92,7 @@ export interface OrderLine {
     image: string;
 }
 
-export type OrderStatus =
-    | 'pending'
-    | 'processing'
-    | 'paid'
-    | 'payment_failed'
-    | 'delivered'
-    | 'completed'
-    | 'cancelled_user'
-    | 'cancelled_admin';
+export type OrderStatus = 'pending' | 'processing' | 'paid' | 'payment_failed' | 'delivered' | 'completed' | 'cancelled_user' | 'cancelled_admin';
 
 export interface Order {
     id: string;
@@ -109,6 +101,9 @@ export interface Order {
     address: string;
     phone: string;
     order_status: OrderStatus;
+    cancellation_reason?: string | null;
+    /** Human-readable reason when the store cancelled the order. */
+    cancellation_reason_label?: string | null;
     subtotal: number;
     shipping_cost: number;
     total_cost: number;

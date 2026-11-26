@@ -35,6 +35,10 @@ class DemoOrderSeeder extends Seeder
         $customer = $this->demoCustomer();
 
         if ($customer->orders()->exists()) {
+            // Demo orders seeded before cancellation reasons existed get one now.
+            $customer->orders()->where('order_status', 'cancelled_admin')->whereNull('cancellation_reason')
+                ->update(['cancellation_reason' => 'out_of_stock']);
+
             return;
         }
 
@@ -71,6 +75,7 @@ class DemoOrderSeeder extends Seeder
                 'address' => sprintf('Unit %d, %d Sample Street, Quezon City (demo address)', $i + 1, 100 + $i * 7),
                 'phone' => sprintf('090000000%02d', $i + 1),   // fake, not a real network prefix
                 'order_status' => $status,
+                'cancellation_reason' => $status === 'cancelled_admin' ? 'out_of_stock' : null,
                 'cart' => $lines,
                 'subtotal' => $subtotal,
                 'shipping_cost' => Order::SHIPPING_FEE,
