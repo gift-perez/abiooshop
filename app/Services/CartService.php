@@ -142,6 +142,19 @@ class CartService
         session()->forget(self::SESSION_KEY);
     }
 
+    /** Reduce a product's quantity in the user's cart, removing it when nothing is left. */
+    public function takeOut(User $user, string $productId, int $quantity): void
+    {
+        $remaining = $this->quantityOf($user, $productId) - $quantity;
+        $product = Product::find($productId);
+
+        if ($remaining <= 0 || ! $product) {
+            $this->remove($user, $productId);
+        } else {
+            $this->setQuantity($user, $product, $remaining);
+        }
+    }
+
     /** Drop the guest (session) cart, e.g. on login, so an account only shows its own saved cart. */
     public function discardSessionCart(): void
     {

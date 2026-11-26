@@ -197,3 +197,24 @@ test('product seeder names products and attaches photos from the band folders', 
         }
     }
 });
+
+test('buying an item with buy now also takes it out of the cart', function () {
+    $hoodie = makeProduct(['name' => 'Hoodie', 'stock' => 10]);
+    $tee = makeProduct(['name' => 'Tee', 'stock' => 10]);
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->post('/cart/add', ['product_id' => $hoodie->id, 'quantity' => 1]);
+    $this->actingAs($user)->post('/cart/add', ['product_id' => $tee->id, 'quantity' => 1]);
+
+    $this->actingAs($user)->post('/buy-now', ['product_id' => $hoodie->id, 'quantity' => 1]);
+    $this->actingAs($user)->post('/orders', [
+        'receiver_name' => 'Juan Dela Cruz',
+        'receiver_address' => '123 Street, Manila',
+        'phone' => '09171234567',
+        'mode' => 'buy_now',
+    ])->assertRedirect();
+
+    // The hoodie was bought, so it leaves the cart; the tee stays.
+    expect($user->cartItems()->pluck('product_id')->all())->toBe([$tee->id])
+        ->and($hoodie->fresh()->stock)->toBe(9);
+});

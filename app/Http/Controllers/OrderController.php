@@ -98,6 +98,10 @@ class OrderController extends Controller
 
         if ($mode === 'buy_now') {
             $this->carts->forgetBuyNow();
+            // If the same item was also sitting in the cart, take the bought quantity out of it.
+            foreach ($order->cart as $line) {
+                $this->carts->takeOut($user, $line['product_id'], $line['quantity']);
+            }
         } else {
             $this->carts->clear($user);
         }
