@@ -17,4 +17,14 @@ return [
         'password' => env('ADMIN_PASSWORD'),
     ],
 
+    /*
+    | Demo customer that owns the sample orders (DemoOrderSeeder). It can only
+    | be logged into when DEMO_PASSWORD is set, e.g. to share a demo login.
+    */
+
+    'demo' => [
+        'email' => env('DEMO_EMAIL', 'demo@example.com'),
+        'password' => env('DEMO_PASSWORD'),
+    ],
+
 ];

@@ -218,3 +218,19 @@ test('buying an item with buy now also takes it out of the cart', function () {
     expect($user->cartItems()->pluck('product_id')->all())->toBe([$tee->id])
         ->and($hoodie->fresh()->stock)->toBe(9);
 });
+
+test('demo order seeder adds fake sample orders once, without touching stock', function () {
+    $this->seed(\Database\Seeders\ProductSeeder::class);
+    $stockBefore = Product::sum('stock');
+
+    $this->seed(\Database\Seeders\DemoOrderSeeder::class);
+    $this->seed(\Database\Seeders\DemoOrderSeeder::class); // second run adds nothing
+
+    $orders = Order::all();
+    expect($orders)->toHaveCount(7)
+        ->and($orders->pluck('order_status')->unique()->sort()->values()->all())
+        ->toBe(['cancelled_admin', 'cancelled_user', 'completed', 'delivered', 'paid', 'pending'])
+        ->and($orders->every(fn ($o) => str_starts_with($o->phone, '090000000')))->toBeTrue()
+        ->and((int) Product::sum('stock'))->toBe((int) $stockBefore)
+        ->and(User::where('email', 'demo@example.com')->first()->isAdmin())->toBeFalse();
+});
