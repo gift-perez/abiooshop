@@ -151,6 +151,17 @@
     --sidebar-ring: oklch(0.439 0 0);
 }
 
+/*
+  daisyUI's theme defines --color-primary/secondary/accent too (accent = teal),
+  which overrides the neutral palette the account/admin UI is built on.
+  Unlayered :root wins over daisyUI's theme, so these keep the app's colours.
+*/
+:root {
+    --color-primary: var(--primary);
+    --color-secondary: var(--secondary);
+    --color-accent: var(--accent);
+}
+
 @layer base {
     * {
         @apply border-border;
