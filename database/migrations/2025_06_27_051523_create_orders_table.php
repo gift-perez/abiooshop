@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->foreignUuid('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->enum('order_status', ['pending', 'processing','paid', 'payment_failed','delivered', 'completed', 'cancelled_user', 'cancelled_admin']);
+            $table->enum('order_status', ['pending', 'processing', 'paid', 'payment_failed', 'delivered', 'completed', 'cancelled_user', 'cancelled_admin'])->default('pending');
             $table->decimal('subtotal');
             $table->decimal('shipping_cost')->default(100.00);
             $table->decimal('total_cost')->nullable();

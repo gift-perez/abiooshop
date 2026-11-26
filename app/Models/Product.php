@@ -7,42 +7,37 @@ use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    //
+    use HasUuids;
 
-    public $incrementing = false;
-    protected $keyType = 'string';
-
-    protected  $fillable = [
-        'id',
+    protected $fillable = [
         'name',
         'description',
         'price',
         'stock',
         'collection',
         'category',
-        'image'
+        'image',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'price' => 'float',
+            'stock' => 'integer',
+        ];
+    }
 
     public function fromCollection()
     {
-        $collectionProducts = Product::where('collection', $this->collection)
+        return Product::where('collection', $this->collection)
             ->whereNot('id', $this->id)
             ->get();
-        return $collectionProducts;
     }
-
 
     public function fromCategory()
     {
-        $categoryProducts = Product::where('category', $this->category)
+        return Product::where('category', $this->category)
             ->whereNot('id', $this->id)
             ->get();
-        return $categoryProducts;
     }
-
-
-
-
-
-
 }

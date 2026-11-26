@@ -4,44 +4,29 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { PackageOpen, PackageSearch } from 'lucide-react';
-import { useState } from 'react';
+import { PackageOpen, PackageSearch, Store } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
-    // {
-    //     title: 'Dashboard',
-    //     href: '/dashboard',
-    //     icon: LayoutGrid,
-    // },
     {
         title: 'Products',
-        href: '/products',
+        href: '/admin/products',
         icon: PackageSearch,
     },
     {
         title: 'Orders',
-        href: '/orders',
+        href: '/admin/orders',
         icon: PackageOpen,
     },
 ];
 
-const footerNavItems: NavItem[] = [];
-
-const RangeSlider = () => {
-    const [sliderValue, setSliderValueMin] = useState(20);
-    const [sliderValueMax, setSliderValueMax] = useState(100);
-    const handleSliderValue = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const valueMin = parseInt(e.target.value);
-        setSliderValueMin(valueMin);
-    };
-
-    const handleSliderValueMax = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const valueMax = parseInt(e.target.value);
-        setSliderValueMax(valueMax);
-    };
-    return <div className="flex flex-col items-center space-x-2"></div>;
-};
+const footerNavItems: NavItem[] = [
+    {
+        title: 'View store',
+        href: '/shop',
+        icon: Store,
+    },
+];
 
 export function AppSidebar() {
     return (
@@ -50,7 +35,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard" prefetch>
+                            <Link href="/admin/products" prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
@@ -60,7 +45,6 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
-                <RangeSlider />
             </SidebarContent>
 
             <SidebarFooter>

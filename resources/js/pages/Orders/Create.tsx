@@ -1,37 +1,28 @@
-import { type BreadcrumbItem } from '@/types';
-import React, { ReactNode, useState } from 'react';
+import CheckoutForm from '@/components/ui/checkoutForm';
 import { Navbar } from '@/components/ui/navbar';
 import SummaryCheckout from '@/components/ui/summaryCheckout';
-import CheckoutForm from '@/components/ui/checkoutForm';
 import type { Cart, CartItem } from '@/types';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Finalize Order',
-        href: '/checkout',
-    },
-];
+import { Head } from '@inertiajs/react';
 
 interface Props {
-  cart: Cart;
-  cartItems: CartItem[];
+    cart: Cart;
+    cartItems: CartItem[];
 }
 
-export default function Index({ cart, cartItems }: Props ) {
+export default function Create({ cart, cartItems }: Props) {
     return (
         <>
-            <Navbar cart = {cart} />
-            <div className="flex w-full flex-col gap-8 lg:flex-row m-4">
-                <div className="flex-[2] flex items-start justify-center m-8">
-                    <div className="w-full max-w-2xl flex flex-col">
-                        <span><CheckoutForm cart={cart} cartItems={cartItems} />
-                        </span>
-
+            <Head title="Checkout" />
+            <Navbar />
+            <div className="m-4 flex w-full flex-col gap-8 lg:flex-row">
+                <div className="m-8 flex flex-[2] items-start justify-center">
+                    <div className="flex w-full max-w-2xl flex-col">
+                        <CheckoutForm mode={cart.status === 'buy_now' ? 'buy_now' : 'cart'} />
                     </div>
                 </div>
-                <div className="flex-1 flex items-start justify-center m-8">
+                <div className="m-8 flex flex-1 items-start justify-center">
                     <div className="w-full max-w-sm">
-                        <SummaryCheckout cart={cart} cartItems={cartItems}/>
+                        <SummaryCheckout cart={cart} cartItems={cartItems} />
                     </div>
                 </div>
             </div>

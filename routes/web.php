@@ -1,51 +1,74 @@
 <?php
 
-use App\Http\Controllers\CartController;
+use App\Http\Controllers\CartDBController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ShopController;
 use App\Http\Middleware\AdminMiddleware;
-use App\Models\Product;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::get('/', function () {
-    $products = Product::all();
-    return Inertia::render('guest', [
-            'products' => $products
-    ]);
-})->name('home');
+/*
+|--------------------------------------------------------------------------
+| Storefront (guests and customers)
+|--------------------------------------------------------------------------
+*/
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::get('/', [ShopController::class, 'home'])->name('home');
+Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+Route::get('/shop/{product}', [ShopController::class, 'show'])->name('shop.show');
+
+// Cart works for guests (session) and logged-in users (database).
+Route::get('/cart', [CartDBController::class, 'index'])->name('cart');
+Route::post('/cart/add', [CartDBController::class, 'addToCart'])->name('cart.add');
+Route::put('/cart/update/{productId}', [CartDBController::class, 'updateCart'])->name('cart.update');
+Route::post('/cart/remove/{productId}', [CartDBController::class, 'removeFromCart'])->name('cart.remove');
+Route::put('/cart/clear', [CartDBController::class, 'clearCart'])->name('cart.clear');
+
+/*
+|--------------------------------------------------------------------------
+| Customer area
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    // Starter-kit auth screens redirect to "dashboard"; send each role to its home.
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard')->middleware(AdminMiddleware::class);
+        return auth()->user()->isAdmin()
+            ? redirect()->route('products.index')
+            : redirect()->route('shop.index');
+    })->name('dashboard');
 
+    Route::post('/buy-now', [CartDBController::class, 'buyNow'])->name('buy.now');
+    Route::get('/checkout', [CartDBController::class, 'checkout'])->name('checkout');
 
-
-    // Route::get('/shop', [ShopController::class, 'index'])
-    // //     ->name('shop.index');
-    // Route::get('/shop/{id}', [ShopController::class, 'show'])
-    //     ->name('shop.show');
-    // Route::get('/shop/filter', [ShopController::class, 'filterbyCategory'])
-    //     ->name('shop.filter');
-
+    Route::get('/my-orders', [OrderController::class, 'showOrders'])->name('orders.showOrders');
+    Route::post('/orders', [OrderController::class, 'finalize'])->name('orders.finalize');
+    Route::get('/orders/{order}/payment', [OrderController::class, 'payment'])->name('orders.payment');
+    Route::post('/orders/{order}/payment', [OrderController::class, 'simulatePayment'])
+        ->middleware('throttle:20,1')
+        ->name('orders.pay');
+    Route::put('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+    Route::put('/orders/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
 });
 
-Route::get('/shop', [ShopController::class, 'index'])
-    ->name('shop.index');
+/*
+|--------------------------------------------------------------------------
+| Admin area
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/shop/{id}', [ShopController::class, 'show'])
-    ->name('shop.show');
+Route::middleware(['auth', AdminMiddleware::class])->prefix('admin')->group(function () {
+    Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
+    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
+    Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
-Route::post('/shop/filter/category', [ShopController::class, 'filterbyCategory'])->name('shop.filter.category');
-Route::post('/shop/filter/collection', [ShopController::class, 'filterbyCollection'])->name('shop.filter.collection');
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::put('/orders/{order}/deliver', [OrderController::class, 'markAsDelivered'])->name('orders.deliver');
+    Route::put('/orders/{order}/admin-cancel', [OrderController::class, 'adminCancel'])->name('orders.adminCancel');
+});
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
-require __DIR__.'/productcontroller.php';
-require __DIR__.'/ordercontroller.php';
-require __DIR__.'/cartcontroller.php';
-require __DIR__.'/sessionCartcontroller.php';
-require __DIR__.'/adminProductController.php';
-require __DIR__.'/adminOrderController.php';
-require __DIR__.'/guestcontroller.php';

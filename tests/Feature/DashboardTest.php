@@ -8,8 +8,15 @@ test('guests are redirected to the login page', function () {
     $this->get('/dashboard')->assertRedirect('/login');
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $this->actingAs($user = User::factory()->create());
+test('customers are sent to the shop', function () {
+    $this->actingAs(User::factory()->create());
 
-    $this->get('/dashboard')->assertOk();
+    $this->get('/dashboard')->assertRedirect(route('shop.index'));
+});
+
+test('admins are sent to the product admin', function () {
+    $admin = User::factory()->create();
+    $admin->forceFill(['role' => 'admin'])->save();
+
+    $this->actingAs($admin)->get('/dashboard')->assertRedirect(route('products.index'));
 });

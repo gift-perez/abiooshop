@@ -2,242 +2,216 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cart;
-use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\CartService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Illuminate\Support\Str;
 
+/**
+ * Order lifecycle:
+ *
+ *   pending ──(customer pays, demo)──> paid ──(admin)──> delivered ──(customer)──> completed
+ *      │                                 │
+ *      └─(customer cancels)              └─(admin cancels)
+ *         cancelled_user                    cancelled_admin
+ *
+ * Stock is reserved when the order is placed and returned when it is cancelled.
+ */
 class OrderController extends Controller
 {
-    //
-    public function index(){
+    public function __construct(private CartService $carts) {}
 
-        $user = Auth::user();
-        if(!$user->role === 'admin'){
-            return redirect()->route('shop.index')->with('message', "Page requires admin access");
-        }
-        $orders = Order::all();
+    /* ----------------------------------------------------------------- */
+    /*  Customer                                                          */
+    /* ----------------------------------------------------------------- */
 
-        return Inertia::render('Admin/Orders/Index', [
-            'orders' => $orders
-        ]);
-
-    }
-
-    public function showOrders()
+    public function showOrders(Request $request)
     {
-        $userId = Auth::id();
-        $orders = Order::where('user_id', $userId)->get();
-
         return Inertia::render('Orders/UserOrders', [
-            'orders' => $orders
+            'orders' => $request->user()->orders()->latest()->get(),
         ]);
     }
 
-    public function create(){
-        // return view('products.create');
-        return Inertia::render('Orders/Create');
-    }
-
-    public static function generateOrderid(int $length = 20): string
+    public function finalize(Request $request)
     {
-        $order_id = Str::random($length);//Generate random string
-        $exists = Order::where('id', '=', $order_id)->first();
-        if (isset($exists[0]->id)) {//id exists in orders table
-            return self::generateOrderid();//Retry with another generated id
+        $data = $request->validate([
+            'receiver_name' => ['required', 'string', 'max:255'],
+            'receiver_address' => ['required', 'string', 'max:1000'],
+            'phone' => ['required', 'string', 'regex:/^(\+63|0)9\d{9}$/'],
+            'mode' => ['nullable', 'in:cart,buy_now'],
+        ], [
+            'phone.regex' => 'Enter a valid PH mobile number, e.g. 09171234567.',
+        ]);
+
+        $user = $request->user();
+        $mode = $data['mode'] ?? 'cart';
+        $items = $this->carts->checkoutItems($user, $mode);
+
+        if (empty($items)) {
+            return redirect()->route('cart')->with('error', 'Your cart is empty.');
         }
-        return $order_id;//Return the generated id as it does not exist in the DB
-    }
 
-public function finalize(Request $request)
-{
-    $userId = Auth::id();
+        $order = DB::transaction(function () use ($items, $data, $user) {
+            $lines = [];
 
+            foreach ($items as $item) {
+                // Lock the row so two checkouts can't oversell the same stock.
+                $product = Product::whereKey($item['product_id'])->lockForUpdate()->first();
 
+                if (! $product || $product->stock < $item['quantity']) {
+                    $available = $product?->stock ?? 0;
+                    throw ValidationException::withMessages([
+                        'stock' => "Not enough stock for {$item['name']} (only {$available} left).",
+                    ]);
+                }
 
-    $name = $request->receiver_name;
-    $address = $request->receiver_address;
-    $phone = $request->phone;
-
-    $cart = Cart::where('user_id', $userId)->firstOrFail();
-    $cartStatus = $cart->status;
-
-    $items = [];
-    $subtotal = 0;
-
-    if ($cartStatus === 'buy_now') {
-        // Buy Now flow — receive items directly from frontend
-        $items = $request->input('items', []);
-
-        foreach ($items as &$item) {
-            $product = Product::findOrFail($item['product_id']);
-            if ($product->stock >= $item['quantity']) {
                 $product->decrement('stock', $item['quantity']);
-            } else {
-                return redirect()->route('shop.index')->with('message', "Insufficient stock for product: {$product->name}. Only {$product->stock} available.");
-                throw new \Exception("Insufficient stock for product: {$product->name}. Only {$product->stock} available.");
+
+                $lines[] = [
+                    'product_id' => $product->id,
+                    'name' => $product->name,
+                    'description' => $product->description,
+                    'quantity' => $item['quantity'],
+                    'price' => $product->price,
+                    'subtotal' => round($item['quantity'] * $product->price, 2),
+                    'image' => $product->image,
+                ];
             }
 
-            $item['subtotal'] = $item['quantity'] * $item['price'];
-            $subtotal += $item['subtotal'];
+            $subtotal = round(array_sum(array_column($lines, 'subtotal')), 2);
+
+            return Order::create([
+                'user_id' => $user->id,
+                'name' => $data['receiver_name'],
+                'address' => $data['receiver_address'],
+                'phone' => $data['phone'],
+                'order_status' => 'pending',
+                'cart' => $lines,
+                'subtotal' => $subtotal,
+                'shipping_cost' => Order::SHIPPING_FEE,
+                'total_cost' => $subtotal + Order::SHIPPING_FEE,
+            ]);
+        });
+
+        if ($mode === 'buy_now') {
+            $this->carts->forgetBuyNow();
+        } else {
+            $this->carts->clear($user);
         }
 
-    } else {
-        $cartItems = CartItem::where('cart_id', $cart->id)->get();
+        return redirect()->route('orders.payment', $order);
+    }
 
-        foreach ($cartItems as $cartItem) {
-            $product = Product::findOrFail($cartItem->product_id);
-            if ($product->stock >= $cartItem->quantity) {
-                $product->decrement('stock', $cartItem->quantity);
-            } else {
-                return redirect()->route('shop.index')->with('message', "Insufficient stock for product: {$product->name}. Only {$product->stock} available.");
-                throw new \Exception("Insufficient stock for product: {$product->name}. Only {$product->stock} available.");
-            }
+    public function payment(Request $request, Order $order)
+    {
+        $this->authorizeOwner($request, $order);
 
-            $subtotal += $cartItem->subtotal;
-
-            $items[] = [
-                'product_id' => $cartItem->product_id,
-                'name' => $cartItem->name,
-                'description' => $cartItem->description,
-                'quantity' => $cartItem->quantity,
-                'price' => $cartItem->price,
-                'subtotal' => $cartItem->subtotal,
-                'image' => $cartItem->image,
-            ];
-
-            // After order, clear DB cart items
-            CartItem::where('cart_id', $cart->id)->delete();
-            $cart->recalculateTotals();
+        if (! in_array($order->order_status, ['pending', 'paid'], true)) {
+            return redirect()->route('orders.showOrders')->with('error', 'This order is no longer awaiting payment.');
         }
 
-
-
+        return Inertia::render('Orders/GcashPayment', [
+            'order' => $order->only([
+                'id', 'order_status', 'subtotal', 'shipping_cost', 'total_cost', 'name', 'address', 'phone', 'cart',
+            ]),
+        ]);
     }
 
-    // Store items JSON
-    $itemsJson = json_encode($items);
+    /**
+     * DEMO ONLY: there is no real payment gateway. The order owner can
+     * simulate a successful or failed GCash payment.
+     */
+    public function simulatePayment(Request $request, Order $order)
+    {
+        $this->authorizeOwner($request, $order);
 
-    // Create Order
-    $order = new Order();
-    $order->id = $this->generateOrderid();
-    $order->name = $name;
-    $order->address = $address;
-    $order->phone = $phone;
-    $order->user_id = $userId;
-    $order->order_status = 'pending';
-    $order->cart = $itemsJson;
-    $order->subtotal = $subtotal;
-    $order->total_cost = $subtotal + 100.00; // example shipping fee
+        $data = $request->validate(['result' => ['required', 'in:paid,failed']]);
 
-    $order->save();
-
-    $cart->delete();
-
-    $cart->status = 'active';
-
-    $cart->save();
-    return Inertia::render('Orders/GcashPayment', [
-        'orderId' => $order->id,
-        'order' => [
-            'id' => $order->id,
-            'user_id' => $order->user_id,
-            'order_status' => $order->order_status,
-            'subtotal' => $order->subtotal,
-            'shipping_cost' => 100,
-            'total_cost' => $order->total_cost,
-            // 'notes' => $order->notes,
-            'address' => $order->address,
-            'name' => $order->name,
-            'phone' => $order->phone,
-            'cart' => $order->cart,
-        ],
-    ]);
-}
-
-
-    public function approve(Request $request){
-        $orderId = $request->id;
-        $order = Order::findOrFail($orderId);
-        $order->order_status = 'approved';
-        $order->save();
-        Inertia::share($order);
-
-        return redirect()->back()->with('message', 'Order confirmed successfully!');
-    }
-
-    public function destroy(Request $request){
-        $orderId = $request->id;
-        $order = Order::findOrFail($orderId);
-        $order->delete();
-        Inertia::share($order);
-        return redirect()->back()->with('message', 'Order deleted successfully!');
-    }
-
-    public function markAsDelivered (Request $request){
-        $orderId = $request->id;
-        $order = Order::findOrFail($orderId);
-        $order->order_status = 'delivered';
-        $order->save();
-        Inertia::share($order);
-
-        return redirect()->back()->with('message', 'Order was marked as delivered!');
-    }
-
-    public function complete (Request $request){
-        $orderId = $request->id;
-        $order = Order::findOrFail($orderId);
-        $order->order_status = 'completed';
-        $order->save();
-        Inertia::share($order);
-
-        return redirect()->back()->with('message', 'Order was marked as completed!');
-    }
-
-
-public function continuePayment(Request $request)
-{
-    $orderId = $request->id;
-    $order = Order::findOrFail($orderId);
-
-    $jsonCart = json_decode($order->cart, true);
-
-    //reserve stock
-    foreach ($jsonCart as $item){
-        $product = Product::where('id', $item['product_id'])->first();
-        // $before = $product->stock;
-        // dd($product->stock, (int)$item['quantity']);
-        if((int)$item['quantity'] > $product->stock){
-            return redirect()->back()->with('message', 'Not enough stock');
-        }else{
-            $product->stock = $product->stock - $item['quantity'];
-            $product->save();
+        if ($order->order_status !== 'pending') {
+            return back()->with('error', 'This order is no longer awaiting payment.');
         }
-        // $product->stock = $before - $item['quantity'];
-        // $product->save(
 
-        // dd($product->name,$product->id, $before, $after);
+        if ($data['result'] === 'failed') {
+            return back()->with('error', 'Payment failed (simulated). You can try again or cancel the order.');
+        }
+
+        $order->update(['order_status' => 'paid']);
+
+        return back()->with('success', 'Payment successful (simulated). Thank you for your order!');
     }
-    return Inertia::render('Orders/GcashPayment', [
-        'orderId' => $order->id,
-        'order' => [
-            'id' => $order->id,
-            'user_id' => $order->user_id,
-            'order_status' => $order->order_status,
-            'subtotal' => $order->subtotal,
-            'shipping_cost' => 100,
-            'total_cost' => $order->total_cost,
-            'address' => $order->address,
-            'name' => $order->name,
-            'phone' => $order->phone,
-            'cart' => $order->cart,
-        ],
-    ]);
-}
 
+    public function cancel(Request $request, Order $order)
+    {
+        $this->authorizeOwner($request, $order);
 
+        if ($order->order_status !== 'pending') {
+            return back()->with('error', 'Only unpaid orders can be cancelled.');
+        }
+
+        DB::transaction(function () use ($order) {
+            $order->restoreStock();
+            $order->update(['order_status' => 'cancelled_user']);
+        });
+
+        return redirect()->route('orders.showOrders')->with('success', 'Order cancelled.');
+    }
+
+    public function complete(Request $request, Order $order)
+    {
+        $this->authorizeOwner($request, $order);
+
+        if ($order->order_status !== 'delivered') {
+            return back()->with('error', 'Only delivered orders can be marked as received.');
+        }
+
+        $order->update(['order_status' => 'completed']);
+
+        return back()->with('success', 'Thanks! Order marked as received.');
+    }
+
+    /* ----------------------------------------------------------------- */
+    /*  Admin (routes are behind AdminMiddleware)                         */
+    /* ----------------------------------------------------------------- */
+
+    public function index()
+    {
+        return Inertia::render('Admin/Orders/Index', [
+            'orders' => Order::latest()->get(),
+        ]);
+    }
+
+    public function markAsDelivered(Order $order)
+    {
+        if ($order->order_status !== 'paid') {
+            return back()->with('error', 'Only paid orders can be marked as delivered.');
+        }
+
+        $order->update(['order_status' => 'delivered']);
+
+        return back()->with('success', 'Order marked as delivered.');
+    }
+
+    public function adminCancel(Order $order)
+    {
+        if (! in_array($order->order_status, ['pending', 'paid'], true)) {
+            return back()->with('error', 'This order can no longer be cancelled.');
+        }
+
+        DB::transaction(function () use ($order) {
+            $order->restoreStock();
+            $order->update(['order_status' => 'cancelled_admin']);
+        });
+
+        return back()->with('success', 'Order cancelled and stock restored.');
+    }
+
+    /* ----------------------------------------------------------------- */
+
+    private function authorizeOwner(Request $request, Order $order): void
+    {
+        abort_unless($order->belongsToUser($request->user()), 404);
+    }
 }

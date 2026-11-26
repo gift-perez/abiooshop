@@ -2,9 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Cart;
-use App\Models\CartItem;
-use Illuminate\Foundation\Inspiring;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
@@ -39,39 +37,24 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
-
         return [
             ...parent::share($request),
             'name' => config('app.name'),
-            'quote' => ['message' => trim($message), 'author' => trim($author)],
-            'numItems' => function () use ($request) {
-                if ($request->user()) {
-                    // Logged-in user
-                    $dbCart = Cart::where('user_id', $request->user()->id)->first();
-                    return $dbCart ? $dbCart->num_items : 0;
-                } else {
-                    // Guest session
-                    $sessionCart = session()->get('cart', []);
-                    return count($sessionCart);
-                }
-            },
+            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'numItems' => fn () => app(CartService::class)->count($request->user()),
             'auth' => [
-                'user' => $request->user()
-                ? $request->user()->only('id', 'name', 'email', 'role', 'is_admin')
-                : null,
+                'user' => $request->user()?->only('id', 'name', 'email', 'role'),
             ],
-            'flash' => function () {
-                return [
-                    'message' => session('success') ?? session('error'),
-                ];
-            },
+            'flash' => fn () => [
+                'success' => session('success'),
+                'error' => session('error'),
+                // Single field kept for pages that just show "a message".
+                'message' => session('success') ?? session('error'),
+            ],
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
-
         ];
-
     }
 }

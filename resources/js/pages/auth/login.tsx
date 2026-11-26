@@ -9,10 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
-import { PageProps } from '@inertiajs/inertia';
-import { usePage } from '@inertiajs/react';
-import { useEffect } from 'react';
-import { toast, Toaster } from 'sonner';
 
 type LoginForm = {
     email: string;
@@ -25,22 +21,7 @@ interface LoginProps {
     canResetPassword: boolean;
 }
 
-interface CustomPageProps extends PageProps {
-    flash?: {
-        message?: string;
-    };
-    [key: string]: any;
-}
-
 export default function Login({ status, canResetPassword }: LoginProps) {
-    const { flash } = usePage<CustomPageProps>().props;
-
-    useEffect(() => {
-        if (flash?.message) {
-            toast(flash.message);
-        }
-    }, [flash]);
-
     const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
         email: '',
         password: '',
@@ -57,7 +38,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     return (
         <AuthLayout title="Log in to your account" description="Enter your email and password below to log in">
             <Head title="Log in" />
-            <Toaster richColors position="bottom-right" />
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-6">
                     <div className="grid gap-2">

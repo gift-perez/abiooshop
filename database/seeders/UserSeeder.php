@@ -1,38 +1,37 @@
 <?php
 
-
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class UserSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
-     *
-     * @return void
+     * Create (or update) the admin account from ADMIN_EMAIL / ADMIN_PASSWORD.
+     * Safe to run on every deploy.
      */
-    public function run()
+    public function run(): void
     {
-        //
-        $users = [
-            [
-                'name' => 'Admin',
-                'email' => 'admin@mail.com',
-                'password' => 'adminadmin'
-            ],
-        ];
+        $email = config('shop.admin.email');
+        $password = config('shop.admin.password');
 
-        foreach($users as $user) {
-            User::create([
-                'name' => $user['name'],
-                'email' => $user['email'],
-                'password' => Hash::make($user['password']),
-                'role' => 'admin'
-            ]);
+        $existing = User::where('email', $email)->first();
+
+        if (! $password) {
+            if ($existing) {
+                return; // Keep the current password.
+            }
+
+            $password = Str::password(16, symbols: false);
+            $this->command?->warn("ADMIN_PASSWORD not set. Generated admin password for {$email}: {$password}");
         }
+
+        $admin = $existing ?? new User(['email' => $email]);
+        $admin->name = $admin->name ?: 'Admin';
+        $admin->password = $password; // hashed by the model cast
+        $admin->forceFill(['role' => 'admin', 'email_verified_at' => $admin->email_verified_at ?? now()]);
+        $admin->save();
     }
 }

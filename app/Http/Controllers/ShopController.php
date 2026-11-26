@@ -8,59 +8,36 @@ use Inertia\Inertia;
 
 class ShopController extends Controller
 {
-    //
-
-    public function index(){
-
-        $products = Product::all();
-
-        return Inertia::render('Shop/Index', [
-            'products' => $products
+    public function home()
+    {
+        return Inertia::render('guest', [
+            'products' => Product::latest()->get(),
         ]);
     }
 
-    public function show($id)
+    /**
+     * Product listing. Optional filters: ?category=shirts&collection=the1975
+     */
+    public function index(Request $request)
     {
-        $product = Product::findOrFail($id);
+        $products = Product::query()
+            ->when($request->query('category'), fn ($q, $category) => $q->where('category', $category))
+            ->when($request->query('collection'), fn ($q, $collection) => $q->where('collection', $collection))
+            ->latest()
+            ->get();
+
+        return Inertia::render('Shop/Index', [
+            'products' => $products,
+            'filters' => $request->only('category', 'collection'),
+        ]);
+    }
+
+    public function show(Product $product)
+    {
         return Inertia::render('Shop/Show', [
             'product' => $product,
             'collectionProducts' => $product->fromCollection(),
-            'categoryProducts' => $product->fromCategory()
-        ]);
-    }
-
-
-    public function filterbyPrice(Request $request)
-    {
-        $minPrice = $request->input('min_price', 0);
-        $maxPrice = $request->input('max_price', PHP_INT_MAX);
-
-        $products = Product::whereBetween('price', [$minPrice, $maxPrice])->get();
-
-        return Inertia::render('Shop/Index', [
-            'products' => $products
-        ]);
-    }
-
-    public function filterbyCategory(Request $request)
-    {
-        $selected = $request->input('category');
-
-
-        $products = Product::where('category', $selected)->get();
-
-        return Inertia::render('Shop/Index', [
-            'products' => $products
-        ]);
-    }
-
-    public function filterbyCollection(Request $request)
-    {
-        $selected = $request->input('collection');
-        $products = Product::where('collection', $selected)->get();
-
-        return Inertia::render('Shop/Index', [
-            'products' => $products
+            'categoryProducts' => $product->fromCategory(),
         ]);
     }
 }

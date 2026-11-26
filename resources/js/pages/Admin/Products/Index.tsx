@@ -1,61 +1,22 @@
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-// import { Inertia } from '@inertiajs/inertia';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { Megaphone, PackageSearch } from 'lucide-react';
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Products',
-        href: '/products',
-    },
-];
+import { CATEGORIES, COLLECTIONS } from '@/lib/catalog';
+import { imageUrl, peso } from '@/lib/utils';
+import type { BreadcrumbItem, Paginated, Product } from '@/types';
+import { Head, Link, router } from '@inertiajs/react';
+import { PackageSearch } from 'lucide-react';
 
-interface Product {
-    id: number;
-    name: string;
-    description: string;
-    price: number;
-    stock: number;
-    collection: number;
-    category: string;
-    image: string;
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Products', href: '/admin/products' }];
+
+interface Props {
+    products: Paginated<Product>;
 }
 
-interface PaginationLinks {
-  url: string | null;
-  label: string;
-  active: boolean;
-}
-interface Pageprops {
-      items: {
-    data: Item[];
-    current_page: number;
-    last_page: number;
-    links: PaginationLinks[];
-  };
-    flash: {
-        message?: string;
-    };
-    products: Product[];
-}
-interface Products {
-    products: Product[];
-}
-export default function Index({ products }) {
-    const { flash } = usePage().props as Pageprops;
-    const { processing, delete: inertiaDelete } = useForm();
-
-
-    const handleDelete = (id: number, name: string) => {
-        //alert("Do you want to delete the " + name + " product?");
-
-        if (confirm(`Are you sure you want to delete the product "${name}" with id - "${id}"?`)) {
-            // Perform the delete action
-            inertiaDelete(`/products/${id}/delete`);
+export default function Index({ products }: Props) {
+    const handleDelete = (product: Product) => {
+        if (confirm(`Delete "${product.name}"? This cannot be undone.`)) {
+            router.delete(route('products.destroy', product.id), { preserveScroll: true });
         }
     };
 
@@ -67,61 +28,41 @@ export default function Index({ products }) {
                     <Button>Create a Product</Button>
                 </Link>
             </div>
-            <div className="m-4">
-                {flash.message && (
-                    <Alert>
-                        <Megaphone />
-                        <AlertTitle>Notification</AlertTitle>
-                        <AlertDescription>{flash.message}</AlertDescription>
-                    </Alert>
-                )}
-            </div>
-            {products.length > 0 ? (
+
+            {products.data.length > 0 ? (
                 <>
                     <div className="m-4">
                         <Table>
-                            <TableCaption>A list of the products in the database.</TableCaption>
+                            <TableCaption>All products in the store.</TableCaption>
                             <TableHeader>
-                                <TableRow className="space-x-2 text-center">
-                                    <TableHead className="w-[100px]">Product ID</TableHead>
+                                <TableRow>
+                                    <TableHead>Image</TableHead>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Description</TableHead>
                                     <TableHead>Price</TableHead>
                                     <TableHead>Stock</TableHead>
                                     <TableHead>Collection</TableHead>
                                     <TableHead>Category</TableHead>
-                                    <TableHead>Image</TableHead>
                                     <TableHead>Action</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {products.map((product) => (
-                                    <TableRow key={product.id} className="text-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800">
-                                        <TableCell className="font-medium">{product.id}</TableCell>
-                                        <TableCell>{product.name}</TableCell>
-                                        <TableCell>{product.description}</TableCell>
-                                        <TableCell>₱{product.price.toFixed(2)}</TableCell>
-                                        <TableCell>{product.stock}</TableCell>
-                                        <TableCell>{product.collection}</TableCell>
-                                        <TableCell>{product.category}</TableCell>
+                                {products.data.map((product) => (
+                                    <TableRow key={product.id} className="transition-colors hover:bg-gray-100 dark:hover:bg-gray-800">
                                         <TableCell>
-                                            {product.image ? (
-                                                <img src={product.image} alt={product.name} className="h-16 w-16 rounded object-cover" />
-                                            ) : (
-                                                <PlaceholderPattern className="h-16 w-16" />
-                                            )}
+                                            <img src={imageUrl(product.image)} alt={product.name} className="h-16 w-16 rounded object-cover" />
                                         </TableCell>
-                                        <TableCell>
-                                            <Link href={route('products.edit', product.id)} className="text-blue-600 hover:underline">
-                                                <Button type="submit" className="mr-2 bg-slate-500 hover:bg-slate-700">
-                                                    Edit
-                                                </Button>
+                                        <TableCell className="font-medium">{product.name}</TableCell>
+                                        <TableCell className="max-w-xs truncate">{product.description}</TableCell>
+                                        <TableCell>{peso(product.price)}</TableCell>
+                                        <TableCell className={product.stock < 1 ? 'text-red-600' : ''}>{product.stock}</TableCell>
+                                        <TableCell>{COLLECTIONS[product.collection] ?? product.collection}</TableCell>
+                                        <TableCell>{CATEGORIES[product.category] ?? product.category}</TableCell>
+                                        <TableCell className="whitespace-nowrap">
+                                            <Link href={route('products.edit', product.id)}>
+                                                <Button className="mr-2 bg-slate-500 hover:bg-slate-700">Edit</Button>
                                             </Link>
-                                            <Button
-                                                disabled={processing}
-                                                onClick={() => handleDelete(product.id, product.name)}
-                                                className="bg-red-500 hover:bg-red-700"
-                                            >
+                                            <Button onClick={() => handleDelete(product)} className="bg-red-500 hover:bg-red-700">
                                                 Delete
                                             </Button>
                                         </TableCell>
@@ -131,11 +72,26 @@ export default function Index({ products }) {
                         </Table>
                     </div>
 
-                    <div class="container">
+                    {products.last_page > 1 && (
+                        <nav className="m-4 flex flex-wrap gap-2" aria-label="Pagination">
+                            {products.links.map(({ url, label, active }, index) => {
+                                const pageLabel = label.includes('Previous') ? 'Previous' : label.includes('Next') ? 'Next' : label;
+                                const className = `rounded border px-3 py-1 ${
+                                    active ? 'bg-gray-900 text-white' : 'bg-white text-gray-700'
+                                } ${url ? '' : 'pointer-events-none opacity-50'}`;
 
-                    </div>
-
-                    { products->links() }
+                                return url ? (
+                                    <Link key={`${label}-${index}`} href={url} preserveScroll className={className}>
+                                        {pageLabel}
+                                    </Link>
+                                ) : (
+                                    <span key={`${label}-${index}`} className={className}>
+                                        {pageLabel}
+                                    </span>
+                                );
+                            })}
+                        </nav>
+                    )}
                 </>
             ) : (
                 <div className="flex h-64 flex-col items-center justify-center">

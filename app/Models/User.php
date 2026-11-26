@@ -2,25 +2,19 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
-use Faker\Core\Uuid;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Cashier\Billable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasUuids, Billable;
+    use HasFactory, HasUuids, Notifiable;
 
     /**
      * The attributes that are mass assignable.
+     * "role" is intentionally NOT fillable so nobody can register as an admin.
      *
      * @var list<string>
      */
@@ -29,33 +23,6 @@ class User extends Authenticatable
         'email',
         'password',
     ];
-
-    public function cart() {
-        return $this->hasOne(Cart::class);
-    }
-
-    public function cartItems() {
-        return $this->hasMany(CartItem::class);
-    }
-
-    public function isAdmin(){
-        if($this->role === 'admin')
-        return true;
-        else
-        return false;
-    }
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::created(function ($user) {
-            $user->cart()->create(); // Automatically creates a cart for the user
-        });
-
-    }
-
-
 
     /**
      * The attributes that should be hidden for serialization.
@@ -66,6 +33,14 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    protected static function booted(): void
+    {
+        // Every user gets an (empty) cart.
+        static::created(function (User $user) {
+            $user->cart()->create();
+        });
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -78,5 +53,25 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function cart()
+    {
+        return $this->hasOne(Cart::class);
+    }
+
+    public function cartItems()
+    {
+        return $this->hasMany(CartItem::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
     }
 }
