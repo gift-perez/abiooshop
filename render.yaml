@@ -6,6 +6,7 @@ services:
     name: abiooshop
     runtime: docker
     plan: free
+    region: singapore    # same region as the Neon database (AWS ap-southeast-1)
     healthCheckPath: /up
     envVars:
       - key: APP_NAME

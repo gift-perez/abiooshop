@@ -16,7 +16,7 @@ Both are free with no credit card required and use HTTPS by default.
 
 ## 1. Create the database (Neon)
 
-1. Sign up at neon.com and create a project (pick the region closest to your Render region).
+1. Sign up at neon.com and create a project in **AWS Asia Pacific (Singapore)**, the same region as the Render service (`region: singapore` in `render.yaml`).
 2. Copy the **connection string**. It looks like
    `postgresql://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require`
 
