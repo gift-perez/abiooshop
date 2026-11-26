@@ -14,7 +14,7 @@ export default function Index({ cart, cartItems }: Props) {
         <StoreLayout>
             <Head title="Cart" />
             <div className="flex w-full flex-col gap-8 lg:flex-row">
-                <div className="grow">
+                <div className="min-w-0 grow">
                     <CartItems cartItems={cartItems} />
                 </div>
                 {cartItems.length > 0 && (

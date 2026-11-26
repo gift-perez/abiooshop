@@ -70,15 +70,15 @@ export default function CartItems({ cartItems }: Props) {
                         {cartItems.map((cartItem) => (
                             <TableRow key={cartItem.product_id} className="text-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800">
                                 <TableCell className="font-medium">
-                                    <Link href={route('shop.show', cartItem.product_id)} className="m-4 flex flex-row">
-                                        <div className="card bg-base-100 w-24 shadow-sm">
-                                            <figure>
-                                                <img src={imageUrl(cartItem.image)} alt={cartItem.name} className="h-full w-full rounded object-cover" />
-                                            </figure>
-                                        </div>
-                                        <div className="m-4 text-left">
+                                    <Link href={route('shop.show', cartItem.product_id)} className="flex flex-row items-center gap-4 py-2">
+                                        <img
+                                            src={imageUrl(cartItem.image)}
+                                            alt={cartItem.name}
+                                            className="h-20 w-20 shrink-0 rounded border bg-white object-cover sm:h-24 sm:w-24"
+                                        />
+                                        <div className="min-w-0 text-left">
                                             <p className="font-semibold">{cartItem.name}</p>
-                                            <p className="text-sm text-gray-600">{cartItem.description}</p>
+                                            <p className="line-clamp-2 text-sm whitespace-normal text-gray-600">{cartItem.description}</p>
                                         </div>
                                     </Link>
                                 </TableCell>

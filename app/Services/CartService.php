@@ -142,8 +142,14 @@ class CartService
         session()->forget(self::SESSION_KEY);
     }
 
+    /** Drop the guest (session) cart, e.g. on login, so an account only shows its own saved cart. */
+    public function discardSessionCart(): void
+    {
+        session()->forget([self::SESSION_KEY, self::BUY_NOW_KEY]);
+    }
+
     /**
-     * Move a guest's session cart into their account after they log in.
+     * Move a guest's session cart into a brand-new account (used on registration).
      */
     public function mergeSessionIntoUser(User $user): void
     {

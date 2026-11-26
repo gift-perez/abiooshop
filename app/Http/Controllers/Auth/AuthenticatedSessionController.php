@@ -35,8 +35,9 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Keep anything the visitor added to their cart before logging in.
-        $carts->mergeSessionIntoUser($request->user());
+        // Each account keeps its own saved cart. Whatever was added while logged
+        // out stays with the guest session and is dropped, not merged in.
+        $carts->discardSessionCart();
 
         if ($request->user()->isAdmin()) {
             return redirect()->intended(route('products.index', absolute: false));

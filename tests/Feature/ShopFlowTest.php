@@ -46,16 +46,32 @@ test('shop and product pages render', function () {
     $this->get("/shop/{$product->id}")->assertOk();
 });
 
-test('a guest cart is merged into the account on login', function () {
-    $product = makeProduct();
+test('logging in shows only the saved account cart, not the guest cart', function () {
+    $saved = makeProduct(['name' => 'Saved Tee']);
+    $guestPick = makeProduct(['name' => 'Guest Tee']);
     $user = User::factory()->create();
+    app(\App\Services\CartService::class)->add($user, $saved, 1);
 
-    $this->post('/cart/add', ['product_id' => $product->id, 'quantity' => 2])->assertSessionHasNoErrors();
-
+    $this->post('/cart/add', ['product_id' => $guestPick->id, 'quantity' => 2])->assertSessionHasNoErrors();
     $this->post('/login', ['email' => $user->email, 'password' => 'password']);
 
-    expect($user->cart->fresh()->num_items)->toBe(1)
-        ->and($user->cartItems()->first()->quantity)->toBe(2);
+    expect($user->cartItems()->pluck('product_id')->all())->toBe([$saved->id]);
+    $this->get('/cart')->assertInertia(fn ($page) => $page->has('cartItems', 1)->where('cartItems.0.name', 'Saved Tee'));
+});
+
+test('a guest cart becomes the cart of a newly registered account', function () {
+    $product = makeProduct();
+
+    $this->post('/cart/add', ['product_id' => $product->id, 'quantity' => 2]);
+    $this->post('/register', [
+        'name' => 'New Fan',
+        'email' => 'newfan@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    $user = User::where('email', 'newfan@example.com')->first();
+    expect($user->cartItems()->first()->quantity)->toBe(2);
 });
 
 test('placing an order reserves stock and uses database prices', function () {

@@ -47,6 +47,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
+        // A new account has no saved cart yet, so it starts with what the visitor picked.
         $carts->mergeSessionIntoUser($user);
 
         return redirect()->intended(route('shop.index', absolute: false));
