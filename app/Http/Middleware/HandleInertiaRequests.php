@@ -52,9 +52,15 @@ class HandleInertiaRequests extends Middleware
                 'message' => session('success') ?? session('error'),
             ],
             'ziggy' => fn (): array => [
-                ...(new Ziggy)->toArray(),
+                ...(new Ziggy(self::routeGroup()))->toArray(),
                 'location' => $request->url(),
             ],
         ];
+    }
+
+    /** Ziggy route group for the current visitor (see config/ziggy.php). */
+    public static function routeGroup(): string
+    {
+        return auth()->user()?->isAdmin() ? 'admin' : 'customer';
     }
 }

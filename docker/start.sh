@@ -2,6 +2,18 @@
 # Container entrypoint: prepare Laravel, run migrations, then start Apache.
 set -e
 
+# Values pasted into a hosting dashboard often pick up a trailing newline,
+# tab or space, which makes Laravel refuse to boot ("Invalid URI ...").
+# Strip CR/LF/TAB anywhere and spaces at either end. Unset variables stay unset.
+for var in APP_URL APP_KEY ASSET_URL DB_URL DATABASE_URL ADMIN_EMAIL ADMIN_PASSWORD; do
+    eval "isset=\${$var+x}"
+    if [ -n "$isset" ]; then
+        eval "value=\$$var"
+        value=$(printf '%s' "$value" | tr -d '\r\n\t' | sed -e 's/^ *//' -e 's/ *$//')
+        export "$var=$value"
+    fi
+done
+
 cd /var/www/html
 
 if [ -z "$APP_KEY" ]; then
